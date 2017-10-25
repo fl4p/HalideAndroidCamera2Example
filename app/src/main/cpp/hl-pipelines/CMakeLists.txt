@@ -8,18 +8,12 @@ if(NOT HALIDE_DIR)
 	endif()
 endif()
 
-# shared import libHallide (or Hallide.dll)
-find_library ( HALIDE_LIB name Halide PATHS "$HALIDE_DIR/bin" "${HALIDE_DIR}/bin/Release" )		
-if(NOT HALIDE_LIB)
-	message(FATAL_ERROR "Halide lib not found in $HALIDE_DIR/bin" )
-endif()
-file(COPY ${HALIDE_LIB} DESTINATION ${CMAKE_CURRENT_LIST_DIR})
-		
 
 if(NOT CMAKE_HOST_WIN32)
 	set(hlPipelineCompiler ${CMAKE_CXX_COMPILER})
 	set(hlPipelineCompilerFlags "-std=c++11 -lpthread -ldl -lz")
 	set(hlPipelineLibSuffix ".a")
+	set(HALIDE_LIB_PATH "${HALIDE_DIR}/bin/Release/libHalide.so")
 else()
 	# clang's CLI is GCC-compatible
 	if(NOT CLANG OR CLANG STREQUAL "")
@@ -35,6 +29,7 @@ else()
 	endif()
 	set(hlPipelineCompiler ${CLANG})
 	set(hlPipelineCompilerFlags "-std=c++14")
+	set(HALIDE_LIB_PATH "${HALIDE_DIR}/bin/Release/Halide.dll")
 endif()
 
 
@@ -64,11 +59,12 @@ endif()
 
 get_filename_component(hlPipelineSourcesDir ${CMAKE_CURRENT_LIST_DIR} ABSOLUTE)
 
-
+file(COPY ${HALIDE_LIB_PATH} DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 file(MAKE_DIRECTORY "gen")
 file(WRITE gen/tool.cpp "#include \"Halide.h\"\nint main(int argc,char **argv){return Halide::Internal::generate_filter_main(argc, argv, std::cerr);}")
 file(WRITE gen/dummy.c "int hl_pipelines_dummy_noop() {return 0;}")
 file(MAKE_DIRECTORY "${hlPipelineSourcesDir}/${hlTarget}")
+
 
 
 # make sure headers are generated before building:
