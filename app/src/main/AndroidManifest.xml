@@ -11,8 +11,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/MaterialTheme" >
-        <activity android:name=".CameraActivity" android:screenOrientation="landscape
-" >
+        <activity android:name=".CameraActivity" android:screenOrientation="landscape" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
