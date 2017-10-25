@@ -24,7 +24,15 @@ hostClang=C:/data-ssd/dev/cv/llvm-install/bin/clang++.exe
 
 It expects all `*.cpp` files in the same folder to be generators with a call to `HALIDE_REGISTER_GENERATOR(...)`.
 
+When you delete or rename a generator you must Build -> Refresh Linked C++ Projects. Otherwise you'll get a `missing and no known rule to make it` error on next build.
 
 # Supported Android ABIs
 * `arm64-v8a`
 * `x86_64`
+
+# Tested Dev Hosts
+* Ubuntu 16
+* Windows 10
+
+
+
