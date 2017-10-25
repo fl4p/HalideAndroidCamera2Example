@@ -1,0 +1,10 @@
+<resources>
+    <color name="background_dark">#111</color>
+
+    <style name="MaterialTheme" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/background_dark</item>
+        <item name="android:popupBackground">@color/background_dark</item>
+        <item name="android:dropDownSelector">@color/background_dark</item>
+    </style>
+
+</resources>

@@ -1,0 +1,6 @@
+*.a
+*.lib
+*.dll
+*.exe
+*.h
+/gen/

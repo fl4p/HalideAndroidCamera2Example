@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">HalideAndroidCamera2GL</string>
+    <string name="request_permission">Missing Permission</string>
+    <string name="toggle">Toggle Edge Detector</string>
+</resources>
