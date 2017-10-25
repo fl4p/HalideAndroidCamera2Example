@@ -8,13 +8,18 @@ if(NOT HALIDE_DIR)
 	endif()
 endif()
 
+# shared import libHallide (or Hallide.dll)
+find_library ( HALIDE_LIB name Halide PATHS "$HALIDE_DIR/bin" "${HALIDE_DIR}/bin/Release" )		
+if(NOT HALIDE_LIB)
+	message(FATAL_ERROR "Halide lib not found in $HALIDE_DIR/bin" )
+endif()
+file(COPY ${HALIDE_LIB} DESTINATION ${CMAKE_CURRENT_LIST_DIR})
+		
+
 if(NOT CMAKE_HOST_WIN32)
 	set(hlPipelineCompiler ${CMAKE_CXX_COMPILER})
 	set(hlPipelineCompilerFlags "-std=c++11 -lpthread -ldl -lz")
 	set(hlPipelineLibSuffix ".a")
-	# shared import for generator run
-	file(COPY $HALIDE_DIR/bin/libHalide.so
-		DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 else()
 	# clang's CLI is GCC-compatible
 	if(NOT CLANG OR CLANG STREQUAL "")
@@ -28,14 +33,8 @@ else()
 			message(FATAL_ERROR "CLANG not set" )
 		endif()
 	endif()
-	
 	set(hlPipelineCompiler ${CLANG})
 	set(hlPipelineCompilerFlags "-std=c++14")
-
-	
-	# shared import for generator run
-	file(COPY ${HALIDE_DIR}/bin/Release/Halide.dll
-		DESTINATION ${CMAKE_CURRENT_LIST_DIR})
 endif()
 
 
@@ -44,9 +43,6 @@ if(WIN32)
 else()
 	set(hlPipelineLibSuffix ".a")
 endif()
-
-file(GLOB hlPipelineSources *.cpp)
-
 
 # map CMAKE_SYSTEM_PROCESSOR to HL_TARGET `arch-bits`
 if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL "aarch64")
@@ -66,23 +62,22 @@ else()
 endif()
 
 
-file(MAKE_DIRECTORY "gen")
-file(WRITE gen/tool.cpp "#include \"Halide.h\"\nint main(int argc,char **argv){return Halide::Internal::generate_filter_main(argc, argv, std::cerr);}")
-file(WRITE gen/dummy.c "int hl_pipelines_dummy_noop() {return 0;}")
-
-
 get_filename_component(hlPipelineSourcesDir ${CMAKE_CURRENT_LIST_DIR} ABSOLUTE)
 
 
+file(MAKE_DIRECTORY "gen")
+file(WRITE gen/tool.cpp "#include \"Halide.h\"\nint main(int argc,char **argv){return Halide::Internal::generate_filter_main(argc, argv, std::cerr);}")
+file(WRITE gen/dummy.c "int hl_pipelines_dummy_noop() {return 0;}")
 file(MAKE_DIRECTORY "${hlPipelineSourcesDir}/${hlTarget}")
+
+
+# make sure headers are generated before building:
+add_custom_target(hl_pipelines_headers ALL)
 
 set(hlPipelineLibs "")
 set(hlPipelineHeaders "")
 
-
-# makes sure headers are generated before building:
-add_custom_target(hl_pipelines_headers ALL)
-
+file(GLOB hlPipelineSources *.cpp)
 foreach(source IN LISTS hlPipelineSources)
     get_filename_component(obj ${source} NAME_WE)
     set(objLib ${hlPipelineSourcesDir}/${hlTarget}/${obj}${hlPipelineLibSuffix})
@@ -114,19 +109,16 @@ foreach(source IN LISTS hlPipelineSources)
 		COMMENT "running ${obj} pipeline generator"
 	)
 	
+	# This only runs if the pipeline header does not exist yet so build does not fail
+	# `echo "" < ${obj}.h` is a portable file exists check
+	add_custom_command(
+		TARGET hl_pipelines_headers PRE_BUILD
+		COMMAND echo "" < ${obj}.h || (${hlPipelineCompiler} ${compileGenArgs} && ${objBin} -g ${obj} -o ${hlTarget} target=${hlTarget} && ${CMAKE_COMMAND} -E copy ${hlTarget}/${obj}.h ${obj}.h)
+		WORKING_DIRECTORY "${hlPipelineSourcesDir}"
+		COMMENT "running ${obj} pipeline generator (header)"
+	)
 	
-	#if(NOT EXISTS ${obj}.h)
-	#	add_custom_command(
-	#		TARGET hl_pipelines_headers PRE_BUILD
-	#		COMMAND ${hlPipelineCompiler} ARGS ${compileGenArgs}
-	#		COMMAND ${objBin} -g ${obj} -o ${hlTarget} target=${hlTarget}
-	#		COMMAND ${CMAKE_COMMAND} -E copy ${hlTarget}/${obj}.h ${obj}.h
-	#		WORKING_DIRECTORY "${hlPipelineSourcesDir}"
-	#		COMMENT "running ${obj} pipeline generator (header)"
-	#	)
-	#endif()
 endforeach()
-
 
 
 
@@ -136,4 +128,3 @@ target_link_libraries(hl_pipelines ${hlPipelineLibs})
 set_target_properties(hl_pipelines PROPERTIES LINKER_LANGUAGE CXX)
 
 add_dependencies(hl_pipelines hl_pipelines_headers)
-
