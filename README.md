@@ -5,7 +5,7 @@ This is a fork from [HelloAndroidCamera2](https://github.com/halide/Halide/tree/
 It uses Android Camera2 API to capture a YUV stream, applies an edge detector and draws the result directly on the Java SurfaceView through ANativeWindow.
 
 
-This fork is compatible with latest Android Studio C++ CMake toolchain.
+This fork is compatible with Android Studio C++ CMake toolchain.
 
 # Setup
 
